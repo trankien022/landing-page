@@ -85,13 +85,11 @@ npm install
 cp .env.example .env.local
 ```
 
-Add your Google Sheets webhook URL:
+Add your webhook URL:
 
 ```env
-GOOGLE_SHEETS_WEBHOOK_URL=https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec
+LEAD_WEBHOOK_URL=https://your-webhook-url.com/endpoint
 ```
-
-**📋 Google Sheets Setup**: Follow the detailed setup guide in [GOOGLE_SHEETS_SETUP.md](./GOOGLE_SHEETS_SETUP.md)
 
 4. Run the development server:
 
@@ -125,7 +123,7 @@ vercel
 ```
 
 3. Set environment variables in Vercel dashboard:
-   - `GOOGLE_SHEETS_WEBHOOK_URL`: Your Google Apps Script Web App URL
+   - `LEAD_WEBHOOK_URL`: Your webhook endpoint URL
 
 ### Custom Domain Setup
 
@@ -134,27 +132,22 @@ vercel
 3. Add your custom domain
 4. Configure DNS records as instructed by Vercel
 
-## 📧 Google Sheets Integration
+## 📧 Lead Capture Configuration
 
-The lead capture form automatically sends data to Google Sheets via Google Apps Script webhook.
+The lead capture form sends data to a webhook URL specified in the `LEAD_WEBHOOK_URL` environment variable.
 
-### Data Structure
-
-The following data is captured and stored in Google Sheets:
+### Webhook Payload Format
 
 ```json
 {
-  "fullName": "John Doe",
+  "name": "John Doe",
   "email": "john@example.com",
   "phone": "+1234567890",
   "message": "I'm interested in improving my IELTS writing score.",
   "timestamp": "2024-01-01T00:00:00.000Z",
-  "ipAddress": "192.168.1.1",
+  "source": "Writing9 Landing Page",
   "userAgent": "Mozilla/5.0...",
-  "sourcePage": "https://example.com/landing",
-  "utmSource": "google",
-  "utmMedium": "cpc",
-  "utmCampaign": "ielts-writing"
+  "ip": "192.168.1.1"
 }
 ```
 

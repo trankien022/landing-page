@@ -5,7 +5,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     // Validate required fields
-    const { fullName, email, message, website, phone, utmParams } = body;
+    const { name, email, message, website } = body;
 
     // Check for honeypot field (anti-spam)
     if (website) {
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate required fields
-    if (!fullName || !email || !message) {
+    if (!name || !email || !message) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
@@ -29,45 +29,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get Google Sheets webhook URL from environment variables
-    const googleSheetsWebhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+    // Get webhook URL from environment variables
+    const webhookUrl = process.env.LEAD_WEBHOOK_URL;
 
-    if (!googleSheetsWebhookUrl) {
-      console.error(
-        "GOOGLE_SHEETS_WEBHOOK_URL environment variable is not set"
-      );
+    if (!webhookUrl) {
+      console.error("LEAD_WEBHOOK_URL environment variable is not set");
       return NextResponse.json(
         { error: "Service configuration error. Please try again later." },
         { status: 500 }
       );
     }
 
-    // Extract UTM parameters and other tracking data
-    const referer = request.headers.get("referer") || "";
-    const userAgent = request.headers.get("user-agent") || "";
-    const ipAddress =
-      request.headers.get("x-forwarded-for") ||
-      request.headers.get("x-real-ip") ||
-      request.headers.get("cf-connecting-ip") ||
-      "unknown";
-
-    // Prepare data for Google Sheets webhook
+    // Prepare data for webhook
     const webhookData = {
-      fullName,
+      name,
       email,
-      phone: phone || "",
+      phone: body.phone || "",
       message,
       timestamp: new Date().toISOString(),
-      ipAddress,
-      userAgent,
-      sourcePage: referer || "Direct",
-      utmSource: utmParams?.utm_source || "",
-      utmMedium: utmParams?.utm_medium || "",
-      utmCampaign: utmParams?.utm_campaign || "",
+      source: "Writing9 Landing Page",
+      userAgent: request.headers.get("user-agent") || "",
+      ip:
+        request.headers.get("x-forwarded-for") ||
+        request.headers.get("x-real-ip") ||
+        "unknown",
     };
 
-    // Send to Google Sheets webhook
-    const webhookResponse = await fetch(googleSheetsWebhookUrl, {
+    // Send to webhook
+    const webhookResponse = await fetch(webhookUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -77,7 +66,7 @@ export async function POST(request: NextRequest) {
 
     if (!webhookResponse.ok) {
       console.error(
-        "Google Sheets webhook failed:",
+        "Webhook failed:",
         webhookResponse.status,
         webhookResponse.statusText
       );
