@@ -1,14 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Input, Textarea } from "@/components/ui/Input";
-import { validateEmail, validatePhone } from "@/lib/utils";
+import {
+  validateEmail,
+  validatePhone,
+  storeUTMParams,
+  getStoredUTMParams,
+} from "@/lib/utils";
 import { Loader2, CheckCircle, AlertCircle } from "lucide-react";
 
 interface FormData {
-  name: string;
+  fullName: string;
   email: string;
   phone: string;
   message: string;
@@ -16,7 +21,7 @@ interface FormData {
 }
 
 interface FormErrors {
-  name?: string;
+  fullName?: string;
   email?: string;
   phone?: string;
   message?: string;
@@ -24,7 +29,7 @@ interface FormErrors {
 
 export function LeadForm() {
   const [formData, setFormData] = useState<FormData>({
-    name: "",
+    fullName: "",
     email: "",
     phone: "",
     message: "",
@@ -38,6 +43,11 @@ export function LeadForm() {
   >("idle");
   const [submitMessage, setSubmitMessage] = useState("");
 
+  // Store UTM parameters when component mounts
+  useEffect(() => {
+    storeUTMParams();
+  }, []);
+
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 
@@ -50,8 +60,8 @@ export function LeadForm() {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.name.trim()) {
-      newErrors.name = "Name is required";
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Full name is required";
     }
 
     if (!formData.email.trim()) {
@@ -85,12 +95,18 @@ export function LeadForm() {
     setSubmitStatus("idle");
 
     try {
+      // Get stored UTM parameters
+      const utmParams = getStoredUTMParams();
+
       const response = await fetch("/api/lead", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          utmParams,
+        }),
       });
 
       const result = await response.json();
@@ -104,7 +120,7 @@ export function LeadForm() {
 
         // Reset form
         setFormData({
-          name: "",
+          fullName: "",
           email: "",
           phone: "",
           message: "",
@@ -163,34 +179,40 @@ export function LeadForm() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Honeypot field - hidden from users */}
-        <input
-          type="text"
-          name="website"
-          value={formData.website}
-          onChange={(e) => handleInputChange("website", e.target.value)}
-          style={{ display: "none" }}
-          tabIndex={-1}
-          autoComplete="off"
-        />
+        <div className="hidden">
+          <label htmlFor="website">Website (leave blank)</label>
+          <input
+            id="website"
+            type="text"
+            name="website"
+            value={formData.website}
+            onChange={(e) => handleInputChange("website", e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+          />
+        </div>
 
-        {/* Name Field */}
+        {/* Full Name Field */}
         <div>
           <label
-            htmlFor="name"
+            htmlFor="fullName"
             className="block text-sm font-medium text-gray-700 mb-2"
           >
             Full Name *
           </label>
           <Input
-            id="name"
+            id="fullName"
             type="text"
-            value={formData.name}
-            onChange={(e) => handleInputChange("name", e.target.value)}
+            value={formData.fullName}
+            onChange={(e) => handleInputChange("fullName", e.target.value)}
             placeholder="Enter your full name"
-            className={errors.name ? "border-red-500 focus:ring-red-500" : ""}
+            className={
+              errors.fullName ? "border-red-500 focus:ring-red-500" : ""
+            }
           />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+          {errors.fullName && (
+            <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
           )}
         </div>
 

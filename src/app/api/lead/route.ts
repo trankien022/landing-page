@@ -1,112 +1,117 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    
+    const body = await request.json();
+
     // Validate required fields
-    const { name, email, message, website } = body
-    
+    const { fullName, email, message, website, phone, utmParams } = body;
+
     // Check for honeypot field (anti-spam)
     if (website) {
-      return NextResponse.json(
-        { error: 'Spam detected' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Spam detected" }, { status: 400 });
     }
-    
+
     // Validate required fields
-    if (!name || !email || !message) {
+    if (!fullName || !email || !message) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: "Missing required fields" },
         { status: 400 }
-      )
+      );
     }
-    
+
     // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
-        { error: 'Invalid email format' },
+        { error: "Invalid email format" },
         { status: 400 }
-      )
+      );
     }
-    
-    // Get webhook URL from environment variables
-    const webhookUrl = process.env.LEAD_WEBHOOK_URL
-    
-    if (!webhookUrl) {
-      console.error('LEAD_WEBHOOK_URL environment variable is not set')
+
+    // Get Google Sheets webhook URL from environment variables
+    const googleSheetsWebhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+
+    if (!googleSheetsWebhookUrl) {
+      console.error(
+        "GOOGLE_SHEETS_WEBHOOK_URL environment variable is not set"
+      );
       return NextResponse.json(
-        { error: 'Service configuration error. Please try again later.' },
+        { error: "Service configuration error. Please try again later." },
         { status: 500 }
-      )
+      );
     }
-    
-    // Prepare data for webhook
+
+    // Extract UTM parameters and other tracking data
+    const referer = request.headers.get("referer") || "";
+    const userAgent = request.headers.get("user-agent") || "";
+    const ipAddress =
+      request.headers.get("x-forwarded-for") ||
+      request.headers.get("x-real-ip") ||
+      request.headers.get("cf-connecting-ip") ||
+      "unknown";
+
+    // Prepare data for Google Sheets webhook
     const webhookData = {
-      name,
+      fullName,
       email,
-      phone: body.phone || '',
+      phone: phone || "",
       message,
       timestamp: new Date().toISOString(),
-      source: 'Writing9 Landing Page',
-      userAgent: request.headers.get('user-agent') || '',
-      ip: request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown'
-    }
-    
-    // Send to webhook
-    const webhookResponse = await fetch(webhookUrl, {
-      method: 'POST',
+      ipAddress,
+      userAgent,
+      sourcePage: referer || "Direct",
+      utmSource: utmParams?.utm_source || "",
+      utmMedium: utmParams?.utm_medium || "",
+      utmCampaign: utmParams?.utm_campaign || "",
+    };
+
+    // Send to Google Sheets webhook
+    const webhookResponse = await fetch(googleSheetsWebhookUrl, {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(webhookData),
-    })
-    
+    });
+
     if (!webhookResponse.ok) {
-      console.error('Webhook failed:', webhookResponse.status, webhookResponse.statusText)
+      console.error(
+        "Google Sheets webhook failed:",
+        webhookResponse.status,
+        webhookResponse.statusText
+      );
       return NextResponse.json(
-        { error: 'Failed to process your request. Please try again.' },
+        { error: "Failed to process your request. Please try again." },
         { status: 500 }
-      )
+      );
     }
-    
+
     return NextResponse.json(
-      { 
-        ok: true, 
-        message: 'Thank you for your interest! We\'ll get back to you soon.' 
+      {
+        ok: true,
+        message: "Thank you for your interest! We'll get back to you soon.",
       },
       { status: 200 }
-    )
-    
+    );
   } catch (error) {
-    console.error('Lead API error:', error)
+    console.error("Lead API error:", error);
     return NextResponse.json(
-      { error: 'Internal server error. Please try again later.' },
+      { error: "Internal server error. Please try again later." },
       { status: 500 }
-    )
+    );
   }
 }
 
 // Handle other HTTP methods
 export async function GET() {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    { status: 405 }
-  )
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }
 
 export async function PUT() {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    { status: 405 }
-  )
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }
 
 export async function DELETE() {
-  return NextResponse.json(
-    { error: 'Method not allowed' },
-    { status: 405 }
-  )
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
 }

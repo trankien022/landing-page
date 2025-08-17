@@ -10,7 +10,7 @@ A high-fidelity clone of the Writing9.com landing page built with Next.js 15, Ty
 - **Performance Optimized**: Fast loading times with Next.js optimizations
 - **SEO Ready**: Comprehensive metadata and OpenGraph tags
 - **Accessibility**: WCAG 2.1 AA compliant with proper focus management
-- **Lead Capture**: Functional contact form with webhook integration
+- **Lead Capture**: Functional contact form with Google Sheets integration
 - **Smooth Animations**: Framer Motion for enhanced user experience
 
 ## 🛠 Tech Stack
@@ -85,11 +85,13 @@ npm install
 cp .env.example .env.local
 ```
 
-Add your webhook URL:
+Add your Google Sheets webhook URL:
 
 ```env
-LEAD_WEBHOOK_URL=https://your-webhook-url.com/endpoint
+GOOGLE_SHEETS_WEBHOOK_URL=https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec
 ```
+
+**📋 Google Sheets Setup**: Follow the detailed setup guide in [GOOGLE_SHEETS_SETUP.md](./GOOGLE_SHEETS_SETUP.md)
 
 4. Run the development server:
 
@@ -123,7 +125,7 @@ vercel
 ```
 
 3. Set environment variables in Vercel dashboard:
-   - `LEAD_WEBHOOK_URL`: Your webhook endpoint URL
+   - `GOOGLE_SHEETS_WEBHOOK_URL`: Your Google Apps Script Web App URL
 
 ### Custom Domain Setup
 
@@ -132,22 +134,27 @@ vercel
 3. Add your custom domain
 4. Configure DNS records as instructed by Vercel
 
-## 📧 Lead Capture Configuration
+## 📧 Google Sheets Integration
 
-The lead capture form sends data to a webhook URL specified in the `LEAD_WEBHOOK_URL` environment variable.
+The lead capture form automatically sends data to Google Sheets via Google Apps Script webhook.
 
-### Webhook Payload Format
+### Data Structure
+
+The following data is captured and stored in Google Sheets:
 
 ```json
 {
-  "name": "John Doe",
+  "fullName": "John Doe",
   "email": "john@example.com",
   "phone": "+1234567890",
   "message": "I'm interested in improving my IELTS writing score.",
   "timestamp": "2024-01-01T00:00:00.000Z",
-  "source": "Writing9 Landing Page",
+  "ipAddress": "192.168.1.1",
   "userAgent": "Mozilla/5.0...",
-  "ip": "192.168.1.1"
+  "sourcePage": "https://example.com/landing",
+  "utmSource": "google",
+  "utmMedium": "cpc",
+  "utmCampaign": "ielts-writing"
 }
 ```
 

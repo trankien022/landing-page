@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Hero } from "@/sections/Hero";
@@ -9,8 +12,14 @@ import { Pricing } from "@/components/Pricing";
 import { FAQ } from "@/components/FAQ";
 import { CTA } from "@/sections/CTA";
 import { LeadForm } from "@/components/LeadForm";
+import { storeUTMParams } from "@/lib/utils";
 
 export default function Home() {
+  // Store UTM parameters when the page loads
+  useEffect(() => {
+    storeUTMParams();
+  }, []);
+
   return (
     <div className="min-h-screen">
       <Header />
